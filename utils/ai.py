@@ -134,17 +134,26 @@ def match_volunteer(profile: Dict[str, Any]) -> Dict[str, Any]:
     prompt = f"""
 You are helping an NGO match a volunteer to the best role.
 
-Return ONLY valid JSON with this structure:
-{{
+IMPORTANT:
+
+You MUST return ONLY a valid JSON object.
+
+Do NOT write introductions.
+Do NOT write explanations.
+Do NOT wrap the JSON inside ```json blocks.
+Do NOT write any text before or after the JSON.
+
+Return exactly this structure:
+
+{
   "summary": "short explanation",
   "top_matches": [
-    {{"role": "Role name", "score": 0-100, "reason": "why this fits"}},
-    {{"role": "Role name", "score": 0-100, "reason": "why this fits"}},
-    {{"role": "Role name", "score": 0-100, "reason": "why this fits"}}
+    {"role": "Role name", "score": 0-100, "reason": "why this fits"},
+    {"role": "Role name", "score": 0-100, "reason": "why this fits"},
+    {"role": "Role name", "score": 0-100, "reason": "why this fits"}
   ],
   "next_steps": ["step 1", "step 2", "step 3"]
-}}
-
+}
 Volunteer profile:
 Name: {profile.get("full_name", "")}
 City: {profile.get("city", "")}
