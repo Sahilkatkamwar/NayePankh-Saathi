@@ -2,7 +2,7 @@
 
 ### 🔗 Live Demo
 
-🌐 **Live Application:** `https://nayepankh-saathi-ccflnlehmiukybvuj2quew.streamlit.app/`
+🌐 **Live Application:** [Open NayePankh Saathi](https://nayepankh-saathi-ccflnlehmiukybvuj2quew.streamlit.app/)
 
 ---
 
