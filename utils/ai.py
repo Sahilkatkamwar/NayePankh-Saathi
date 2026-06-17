@@ -15,7 +15,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 
 load_dotenv(BASE_DIR / ".env")
 
-MODEL_NAME = "llama-3.3-70b-versatile"
+MODEL_NAME = "llama-3.1-8b-instant"
 
 
 def get_api_key() -> str:
@@ -63,16 +63,35 @@ def generate_text(prompt: str, temperature: float = 0.4, max_output_tokens: int 
 
 
 def _extract_json(text: str) -> Dict[str, Any] | None:
+
     if not text:
         return None
 
-    fenced = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL | re.IGNORECASE)
+    fenced = re.search(
+        r"```json\s*(.*?)\s*```",
+        text,
+        re.DOTALL | re.IGNORECASE,
+    )
+
     if fenced:
         text = fenced.group(1)
 
+    else:
+
+        start = text.find("{")
+
+        end = text.rfind("}")
+
+        if start != -1 and end != -1:
+
+            text = text[start:end + 1]
+
     try:
+
         return json.loads(text.strip())
+
     except Exception:
+
         return None
 
 
@@ -116,7 +135,6 @@ def _fallback_role_matches(profile: Dict[str, Any]) -> Dict[str, Any]:
     scored.sort(key=lambda x: x["score"], reverse=True)
 
     return {
-        "summary": "This is a fallback match because the Groq API key is missing or the AI call failed.",
         "top_matches": scored[:3],
         "next_steps": [
             "Review the top role and contact the volunteer for onboarding.",
@@ -145,15 +163,15 @@ Do NOT write any text before or after the JSON.
 
 Return exactly this structure:
 
-{
+{{
   "summary": "short explanation",
   "top_matches": [
-    {"role": "Role name", "score": 0-100, "reason": "why this fits"},
-    {"role": "Role name", "score": 0-100, "reason": "why this fits"},
-    {"role": "Role name", "score": 0-100, "reason": "why this fits"}
+    {{"role": "Role name", "score": 95, "reason": "why this fits"}},
+    {{"role": "Role name", "score": 85, "reason": "why this fits"}},
+    {{"role": "Role name", "score": 75, "reason": "why this fits"}}
   ],
   "next_steps": ["step 1", "step 2", "step 3"]
-}
+}}
 Volunteer profile:
 Name: {profile.get("full_name", "")}
 City: {profile.get("city", "")}
@@ -174,7 +192,20 @@ Rules:
     try:
         raw = generate_text(prompt, temperature=0.3, max_output_tokens=900)
         parsed = _extract_json(raw)
-        return parsed if parsed else _fallback_role_matches(profile)
+
+        if parsed:
+            return parsed
+
+        return {
+            "summary": "⚠️ AI could not generate a valid role match. Please try again.",
+
+            "top_matches": [],
+
+            "next_steps": [
+                "Try submitting the form again."
+            ],
+        }
+        
     except Exception:
         return _fallback_role_matches(profile)
 
