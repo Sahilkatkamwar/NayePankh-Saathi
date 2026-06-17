@@ -5,43 +5,59 @@ import os
 import re
 from typing import Any, Dict, List
 
-import google.generativeai as genai
 import streamlit as st
+from groq import Groq
+from pathlib import Path
 
-MODEL_NAME = "gemini-2.5-pro"
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+
+load_dotenv(BASE_DIR / ".env")
+
+MODEL_NAME = "llama-3.3-70b-versatile"
 
 
 def get_api_key() -> str:
-    key = ""
+
+    env_key = os.getenv("GROQ_API_KEY", "")
+
+    if env_key:
+        return env_key
+
     try:
-        key = st.secrets.get("GEMINI_API_KEY", "")
+        return st.secrets.get("GROQ_API_KEY", "")
+
     except Exception:
-        key = ""
-    return key or os.getenv("GEMINI_API_KEY", "")
+        return ""
 
 
-def get_model():
+def get_client():
     api_key = get_api_key()
     if not api_key:
         return None
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel(MODEL_NAME)
+    return Groq(api_key=api_key)
 
 
 def generate_text(prompt: str, temperature: float = 0.4, max_output_tokens: int = 1024) -> str:
-    model = get_model()
-    if model is None:
+    client = get_client()
+    if client is None:
         return ""
 
     try:
-        response = model.generate_content(
-            prompt,
-            generation_config={
-                "temperature": temperature,
-                "max_output_tokens": max_output_tokens,
-            },
+        completion = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            temperature=temperature,
+            max_tokens=max_output_tokens,
         )
-        return (response.text or "").strip()
+        content = completion.choices[0].message.content
+        return (content or "").strip()
     except Exception as exc:
         return f"AI error: {exc}"
 
@@ -100,7 +116,7 @@ def _fallback_role_matches(profile: Dict[str, Any]) -> Dict[str, Any]:
     scored.sort(key=lambda x: x["score"], reverse=True)
 
     return {
-        "summary": "This is a fallback match because the Gemini API key is missing or the AI call failed.",
+        "summary": "This is a fallback match because the Groq API key is missing or the AI call failed.",
         "top_matches": scored[:3],
         "next_steps": [
             "Review the top role and contact the volunteer for onboarding.",
@@ -111,8 +127,8 @@ def _fallback_role_matches(profile: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def match_volunteer(profile: Dict[str, Any]) -> Dict[str, Any]:
-    model = get_model()
-    if model is None:
+    client = get_client()
+    if client is None:
         return _fallback_role_matches(profile)
 
     prompt = f"""
@@ -160,8 +176,8 @@ def faq_chat(
     history: List[Dict[str, str]],
     language: str = "English",
 ) -> str:
-    model = get_model()
-    if model is None:
+    client = get_client()
+    if client is None:
         return _faq_fallback(question, context, language)
 
     history_text = "\n".join([f'{m["role"]}: {m["content"]}' for m in history[-8:]])
@@ -171,7 +187,15 @@ You are the NayePankh Saathi FAQ assistant.
 Answer only using the context below.
 If the answer is not available, say that you could not find it in the FAQ and suggest contacting the NGO admin team.
 
-Reply language: {language}
+Rules:
+- Sound professional and NGO-focused.
+- Answer ONLY using the FAQ context.
+- Do not invent information.
+- Keep answers under 80 words.
+- Be concise and practical.
+- If the answer is not available, say:
+  "I couldn't find that information in the NGO FAQ. Please contact the NGO admin team."
+- Reply in {language}.
 
 FAQ context:
 {context}
@@ -182,7 +206,6 @@ Conversation so far:
 User question:
 {question}
 
-Write a friendly, clear answer in {language}.
 """
 
     try:
@@ -212,8 +235,8 @@ def generate_campaign_copy(
     key_message: str,
     call_to_action: str,
 ) -> Dict[str, str] | str:
-    model = get_model()
-    if model is None:
+    client = get_client()
+    if client is None:
         return {
             "instagram_post": f"{campaign_goal}\n\nAudience: {audience}\n\n{key_message}\n\n{call_to_action}",
             "twitter_thread": f"1/ {campaign_goal}\n2/ {key_message}\n3/ {call_to_action}",

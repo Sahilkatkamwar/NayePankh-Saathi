@@ -20,6 +20,34 @@ FAQ_CONTEXT = """
 NayePankh is an NGO focused on community support, volunteer engagement, education help,
 awareness campaigns, and outreach programs.
 
+Foundation details:
+
+- Established: 2021
+- Headquarters: Mumbai, Maharashtra
+
+Common questions and answers:
+
+- What does the NGO do?
+  It supports education, awareness, and community outreach.
+
+- How can I volunteer?
+  Fill the registration form and the team will contact you.
+
+- What skills are useful?
+  Communication, teaching, design, social media, and coordination.
+
+- Is Hindi supported?
+  Yes.
+
+- How do campaigns help?
+  They improve awareness on Instagram, X/Twitter, and email.
+
+- Who should I contact?
+  Contact the NGO admin team.
+
+NayePankh is an NGO focused on community support, volunteer engagement, education help,
+awareness campaigns, and outreach programs.
+
 Common questions and answers:
 - What does the NGO do? It supports education, awareness, and community outreach.
 - How can I volunteer? Fill the registration form and the team will contact you.
